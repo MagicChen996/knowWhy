@@ -1,0 +1,69 @@
+<svg width="860" height="470" viewBox="0 0 860 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="knowWhy 架构：Agent Skill 上层 + Python 库底层">
+  <defs>
+    <style>
+      .t  { font-family: -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
+      .title { font-size: 17px; font-weight: 700; }
+      .sub   { font-size: 12px; }
+      .mono  { font-family: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; font-size: 13px; font-weight: 600; }
+      .desc  { font-size: 12.5px; }
+      .cap   { font-size: 12px; font-weight: 700; letter-spacing: .5px; }
+    </style>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#0f172a" flood-opacity="0.10"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <rect width="860" height="470" rx="14" fill="#f8fafc"/>
+
+  <!-- ================= 上层：Agent Skill ================= -->
+  <rect x="26" y="26" width="808" height="132" rx="12" fill="#eef2ff" stroke="#c7d2fe" stroke-width="1.5"/>
+  <text x="48" y="55" class="t cap" fill="#4338ca">上层 · Agent Skill</text>
+  <text x="48" y="76" class="t sub" fill="#6366f1">何时 / 怎么讲给用户听</text>
+
+  <rect x="48" y="90" width="296" height="50" rx="9" fill="#ffffff" stroke="#a5b4fc" stroke-width="1.4" filter="url(#soft)"/>
+  <text x="66" y="112" class="t mono" fill="#312e81">SKILL.md</text>
+  <text x="66" y="130" class="t sub" fill="#6366f1">触发条件 · 五步流程 · 低摩擦话术</text>
+
+  <rect x="360" y="90" width="220" height="50" rx="9" fill="#ffffff" stroke="#a5b4fc" stroke-width="1.4" filter="url(#soft)"/>
+  <text x="378" y="112" class="t mono" fill="#312e81">scripts/</text>
+  <text x="378" y="130" class="t sub" fill="#6366f1">摘要 · 复盘骨架 · 触发判断</text>
+
+  <rect x="596" y="90" width="216" height="50" rx="9" fill="#ffffff" stroke="#a5b4fc" stroke-width="1.4" filter="url(#soft)"/>
+  <text x="614" y="112" class="t mono" fill="#312e81">references/</text>
+  <text x="614" y="130" class="t sub" fill="#6366f1">话术模板 · 轨迹格式规范</text>
+
+  <!-- connector: skill -> library -->
+  <line x1="430" y1="158" x2="430" y2="204" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <rect x="392" y="168" width="76" height="22" rx="11" fill="#f1f5f9" stroke="#cbd5e1"/>
+  <text x="430" y="183" class="t sub" fill="#475569" text-anchor="middle">调用</text>
+
+  <!-- ================= 底层：Python 库 / CLI ================= -->
+  <rect x="26" y="206" width="808" height="238" rx="12" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/>
+  <text x="48" y="235" class="t cap" fill="#047857">底层 · Python 库 / CLI</text>
+  <text x="48" y="256" class="t sub" fill="#10b981">怎么算（可测试、可复用、可被任何 runtime 调用）</text>
+
+  <!-- row 1 -->
+  <rect x="48" y="272" width="374" height="72" rx="9" fill="#ffffff" stroke="#6ee7b7" stroke-width="1.4" filter="url(#soft)"/>
+  <text x="66" y="296" class="t mono" fill="#065f46">trace.py · capture.py</text>
+  <text x="66" y="316" class="t desc" fill="#334155">原始轨迹 → SessionTrace</text>
+  <text x="66" y="333" class="t sub" fill="#64748b">JSONL / JSON / Markdown / Mira trace</text>
+
+  <rect x="438" y="272" width="374" height="72" rx="9" fill="#ffffff" stroke="#6ee7b7" stroke-width="1.4" filter="url(#soft)"/>
+  <text x="456" y="296" class="t mono" fill="#065f46">engine.py</text>
+  <text x="456" y="316" class="t desc" fill="#334155">SessionTrace → 五维反思骨架</text>
+  <text x="456" y="333" class="t sub" fill="#64748b">每个维度带置信度 + 来源</text>
+
+  <!-- row 2 -->
+  <rect x="48" y="360" width="374" height="72" rx="9" fill="#ffffff" stroke="#6ee7b7" stroke-width="1.4" filter="url(#soft)"/>
+  <text x="66" y="384" class="t mono" fill="#065f46">triggers.py</text>
+  <text x="66" y="404" class="t desc" fill="#334155">触发策略</text>
+  <text x="66" y="421" class="t sub" fill="#64748b">任务边界 / 每 N 轮 / 手动</text>
+
+  <rect x="438" y="360" width="374" height="72" rx="9" fill="#ffffff" stroke="#6ee7b7" stroke-width="1.4" filter="url(#soft)"/>
+  <text x="456" y="384" class="t mono" fill="#065f46">recall.py · cli.py</text>
+  <text x="456" y="404" class="t desc" fill="#334155">成长记忆 · 命令行入口</text>
+  <text x="456" y="421" class="t sub" fill="#64748b">summarize / reflect / review / trigger</text>
+</svg>

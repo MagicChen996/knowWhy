@@ -1,0 +1,76 @@
+<svg width="880" height="230" viewBox="0 0 880 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="knowWhy 数据流：轨迹 → 反思 → 成长记忆">
+  <defs>
+    <style>
+      .t { font-family: -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
+      .step { font-size: 13.5px; font-weight: 600; }
+      .art  { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12px; font-weight: 600; }
+      .sub  { font-size: 11.5px; }
+      .num  { font-size: 12px; font-weight: 700; }
+    </style>
+    <filter id="soft2" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3.5" flood-color="#0f172a" flood-opacity="0.10"/>
+    </filter>
+    <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <rect width="880" height="230" rx="14" fill="#ffffff"/>
+
+  <!-- stage boxes -->
+  <!-- 0 -->
+  <rect x="16" y="60" width="150" height="96" rx="11" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.4" filter="url(#soft2)"/>
+  <circle cx="34" cy="78" r="9" fill="#64748b"/>
+  <text x="34" y="82" class="t num" fill="#fff" text-anchor="middle">0</text>
+  <text x="26" y="110" class="t step" fill="#1e293b">原始轨迹</text>
+  <text x="26" y="129" class="t sub" fill="#64748b">运行环境里</text>
+  <text x="26" y="145" class="t sub" fill="#64748b">真实发生过的记录</text>
+
+  <!-- 1 -->
+  <rect x="190" y="60" width="150" height="96" rx="11" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.4" filter="url(#soft2)"/>
+  <circle cx="208" cy="78" r="9" fill="#3b82f6"/>
+  <text x="208" y="82" class="t num" fill="#fff" text-anchor="middle">1</text>
+  <text x="200" y="110" class="t art" fill="#1d4ed8">capture</text>
+  <text x="200" y="129" class="t sub" fill="#64748b">归一化 + 找候选决策点</text>
+  <text x="200" y="145" class="t sub" fill="#64748b">区分真失败 / 噪音</text>
+
+  <!-- 2 -->
+  <rect x="364" y="60" width="150" height="96" rx="11" fill="#f5f3ff" stroke="#ddd6fe" stroke-width="1.4" filter="url(#soft2)"/>
+  <circle cx="382" cy="78" r="9" fill="#8b5cf6"/>
+  <text x="382" y="82" class="t num" fill="#fff" text-anchor="middle">2</text>
+  <text x="374" y="110" class="t art" fill="#6d28d9">summarize</text>
+  <text x="374" y="129" class="t sub" fill="#64748b">压成紧凑摘要</text>
+  <text x="374" y="145" class="t sub" fill="#64748b">（喂给反思的锚点）</text>
+
+  <!-- 3 -->
+  <rect x="538" y="60" width="150" height="96" rx="11" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.4" filter="url(#soft2)"/>
+  <circle cx="556" cy="78" r="9" fill="#10b981"/>
+  <text x="556" y="82" class="t num" fill="#fff" text-anchor="middle">3</text>
+  <text x="548" y="110" class="t art" fill="#047857">reflect</text>
+  <text x="548" y="129" class="t sub" fill="#64748b">五维复盘骨架</text>
+  <text x="548" y="145" class="t sub" fill="#64748b">agent 补全原理/迁移</text>
+
+  <!-- 4 -->
+  <rect x="712" y="60" width="152" height="96" rx="11" fill="#fff7ed" stroke="#fed7aa" stroke-width="1.4" filter="url(#soft2)"/>
+  <circle cx="730" cy="78" r="9" fill="#f97316"/>
+  <text x="730" y="82" class="t num" fill="#fff" text-anchor="middle">4</text>
+  <text x="722" y="110" class="t art" fill="#c2410c">record</text>
+  <text x="722" y="129" class="t sub" fill="#64748b">learned / stuck</text>
+  <text x="722" y="145" class="t sub" fill="#64748b">写进成长记忆</text>
+
+  <!-- arrows -->
+  <line x1="166" y1="108" x2="186" y2="108" stroke="#94a3b8" stroke-width="1.8" marker-end="url(#ar2)"/>
+  <line x1="340" y1="108" x2="360" y2="108" stroke="#94a3b8" stroke-width="1.8" marker-end="url(#ar2)"/>
+  <line x1="514" y1="108" x2="534" y2="108" stroke="#94a3b8" stroke-width="1.8" marker-end="url(#ar2)"/>
+  <line x1="688" y1="108" x2="708" y2="108" stroke="#94a3b8" stroke-width="1.8" marker-end="url(#ar2)"/>
+
+  <!-- feedback loop -->
+  <path d="M788,160 C788,196 430,200 430,196 C430,200 62,200 62,160"
+        fill="none" stroke="#f97316" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#ar2)"/>
+  <rect x="352" y="188" width="156" height="24" rx="12" fill="#fff7ed" stroke="#fdba74"/>
+  <text x="430" y="204" class="t sub" fill="#c2410c" text-anchor="middle">周期性回顾：下一次遇到它的近亲</text>
+
+  <!-- caption -->
+  <text x="16" y="34" class="t art" fill="#334155">knowwhy capture → summarize → reflect → record</text>
+  <text x="16" y="52" class="t sub" fill="#94a3b8">一条真实轨迹如何变成可迁移的认知</text>
+</svg>

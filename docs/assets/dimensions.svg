@@ -1,0 +1,55 @@
+<svg width="860" height="392" viewBox="0 0 860 392" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="knowWhy 五维复盘框架">
+  <defs>
+    <style>
+      .t { font-family: -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
+      .dnum { font-size: 15px; font-weight: 700; }
+      .dtitle { font-size: 14.5px; font-weight: 700; }
+      .dq { font-size: 12.5px; }
+      .dsub { font-size: 11.5px; }
+      .lead { font-size: 13px; font-weight: 700; }
+    </style>
+    <filter id="soft3" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3.5" flood-color="#0f172a" flood-opacity="0.09"/>
+    </filter>
+  </defs>
+
+  <rect width="860" height="392" rx="14" fill="#f8fafc"/>
+
+  <text x="26" y="34" class="t lead" fill="#334155">五维复盘框架 —— 从「刚发生的事」到「可迁移的能力」</text>
+  <text x="26" y="54" class="t dsub" fill="#94a3b8">固定五维 + 轨迹锚点：约束 agent 的讲解不漂移成泛泛的科普</text>
+
+  <!-- 1 goal -->
+  <rect x="26" y="72" width="808" height="56" rx="10" fill="#eef2ff" stroke="#c7d2fe" stroke-width="1.3" filter="url(#soft3)"/>
+  <rect x="40" y="85" width="30" height="30" rx="8" fill="#6366f1"/>
+  <text x="55" y="105" class="t dnum" fill="#fff" text-anchor="middle">1</text>
+  <text x="86" y="98" class="t dtitle" fill="#312e81">目标回溯</text>
+  <text x="86" y="117" class="t dq" fill="#475569">真正要解决什么问题？为什么是这个目标？成功/失败的判据是什么？</text>
+
+  <!-- 2 decisions -->
+  <rect x="26" y="136" width="808" height="56" rx="10" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.3" filter="url(#soft3)"/>
+  <rect x="40" y="149" width="30" height="30" rx="8" fill="#3b82f6"/>
+  <text x="55" y="169" class="t dnum" fill="#fff" text-anchor="middle">2</text>
+  <text x="86" y="162" class="t dtitle" fill="#1e40af">决策点</text>
+  <text x="86" y="181" class="t dq" fill="#475569">哪几步是真正的「选择」？依据什么信息？放弃了哪些备选？</text>
+
+  <!-- 3 principles -->
+  <rect x="26" y="200" width="808" height="56" rx="10" fill="#f5f3ff" stroke="#ddd6fe" stroke-width="1.3" filter="url(#soft3)"/>
+  <rect x="40" y="213" width="30" height="30" rx="8" fill="#8b5cf6"/>
+  <text x="55" y="233" class="t dnum" fill="#fff" text-anchor="middle">3</text>
+  <text x="86" y="226" class="t dtitle" fill="#5b21b6">原理层</text>
+  <text x="86" y="245" class="t dq" fill="#475569">每步背后的机制/公式/领域知识？为什么有效？什么时候会失效？</text>
+
+  <!-- 4 evidence -->
+  <rect x="26" y="264" width="808" height="56" rx="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.3" filter="url(#soft3)"/>
+  <rect x="40" y="277" width="30" height="30" rx="8" fill="#10b981"/>
+  <text x="55" y="297" class="t dnum" fill="#fff" text-anchor="middle">4</text>
+  <text x="86" y="290" class="t dtitle" fill="#065f46">证据链</text>
+  <text x="86" y="309" class="t dq" fill="#475569">结论从哪些数据/文献推出？哪一步是事实、哪一步是推断？</text>
+
+  <!-- 5 transfer -->
+  <rect x="26" y="328" width="808" height="52" rx="10" fill="#fff7ed" stroke="#fed7aa" stroke-width="1.3" filter="url(#soft3)"/>
+  <rect x="40" y="339" width="30" height="30" rx="8" fill="#f97316"/>
+  <text x="55" y="359" class="t dnum" fill="#fff" text-anchor="middle">5</text>
+  <text x="86" y="352" class="t dtitle" fill="#9a3412">迁移</text>
+  <text x="86" y="371" class="t dq" fill="#475569">换一个问题哪部分能复用？这次的坑/捷径下次照搬还是改掉？</text>
+</svg>

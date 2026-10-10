@@ -3,6 +3,13 @@
 > 让使用者在使用 AI 完成任务的同时，**周期性复盘「为什么每一步这样做」**，
 > 把认知外包变成能力增长。
 
+[![tests](https://img.shields.io/badge/tests-46%20passed-brightgreen)](#安装)
+[![python](https://img.shields.io/badge/python-3.9%2B-blue)](#安装)
+[![license](https://img.shields.io/badge/license-MIT-lightgrey)](#license)
+[![agent skill](https://img.shields.io/badge/Agent%20Skill-installable-6366f1)](#作为-agent-skill-使用)
+
+![knowWhy 数据流](docs/assets/pipeline.svg)
+
 ## 问题
 
 AI / Agent / LLM 能完成越来越多使用者自己做不到的事。但结果拿到手之后，
@@ -19,19 +26,14 @@ knowWhy 在做完一个任务后插入一个**低摩擦的反思回合**，把�
 
 ## 架构
 
-```
-             ┌──────────────────── 上层：Agent Skill（何时/怎么用）────────────────────┐
-             │  skill/knowwhy/SKILL.md  · 五维话术 · 触发时机 · 低摩擦呈现            │
-             └───────────────────────────────┬───────────────────────────────────────┘
-                                             │ 调用
-┌─────────────── 底层：Python 库 / CLI（怎么算） ───────────────┐
-│ trace.py    原始会话 → SessionTrace（JSONL / JSON / Markdown）│
-│ engine.py   SessionTrace → 五维反思骨架（带置信度+来源）      │
-│ triggers.py 触发策略：任务边界 / 每 N 轮 / 手动               │
-│ recall.py   成长记忆：learned / stuck 的 JSONL 累积           │
-│ cli.py      summarize · reflect · review · trigger            │
-└──────────────────────────────────────────────────────────────┘
-```
+![knowWhy 架构](docs/assets/architecture.svg)
+
+- **上层 · Agent Skill**：承载「何时触发、怎么讲给用户听」——SKILL.md、话术模板、
+  低摩擦交互。
+- **底层 · Python 库 / CLI**：承载「怎么算」——轨迹归一化、五维反思引擎、触发策略、
+  成长记忆。可测试、可复用、可被任何 runtime 调用。
+
+设计取向上，**Skill 是主体，库是它的手脚**：方法论才是可迁移的资产（见「设计取舍」）。
 
 ## 安装
 
@@ -92,21 +94,24 @@ print(build_reflection(trace).to_markdown())  # 五维复盘
 
 ## 五维复盘框架
 
-| 维度 | 回答什么 |
-|---|---|
-| 目标回溯 | 真正要解决什么问题？为什么是这个目标？判据是什么？ |
-| 决策点 | 哪几步是真正的「选择」？依据什么？放弃了哪些备选？ |
-| 原理层 | 每步背后的机制/公式/领域知识？为什么有效？何时失效？ |
-| 证据链 | 结论从哪些数据/文献推出？哪步是事实、哪步是推断？ |
-| 迁移 | 换一个问题哪部分能复用？还缺哪块能力？ |
+![五维复盘框架](docs/assets/dimensions.svg)
+
+每个维度都带**置信度 + 来源**：反思本身也会幻觉，所以轨迹里观察到的事实与推断
+必须分开标注，避免用错误知识训练使用者。
 
 ## 触发策略（周期性）
 
-三种触发，可组合，优先级 `manual > task_boundary > every_n_turns`：
+![触发策略](docs/assets/triggers.svg)
 
-- **任务边界**：多步任务刚完成/失败（≥3 步）→ 主动复盘邀请；
-- **每 N 轮**：长会话里连续约 8 轮未复盘 → 轻量提醒（可「跳过」静默）；
-- **手动**：用户说"讲讲为什么/复盘/explain your approach"→ 立即展开。
+三种触发可组合，**优先级 `manual > task_boundary > every_n_turns`**，每次只走最高
+优先级的那个：
+
+- **任务边界**：多步任务刚完成/失败（≥3 步）→ 主动复盘邀请（价值最高的时机，目标还热乎）；
+- **每 N 轮**：长会话里连续约 8 轮未复盘 → 轻量提醒（可「跳过」静默，不反复打扰）；
+- **手动**：用户说「讲讲为什么 / 复盘 / explain your approach」→ 立即展开，不啰嗦。
+
+为什么要三种而不是一个定时器？固定时钟会在没事发生时打扰、在最该复盘的硬任务后沉默。
+用**事件锚点 + 粗粒度节奏上限**，才能在正确的时刻出现。
 
 ## 作为 Agent Skill 使用
 
@@ -119,6 +124,19 @@ print(build_reflection(trace).to_markdown())  # 五维复盘
 python -m scripts.package_skill skill/knowwhy   # 需要 skill-creator 的脚本
 ```
 
+
+## 设计取舍
+
+- **为什么 skill + 库，而不是二选一**：库承载「怎么算」（可测试、可复用、可被任何
+  runtime 调用），Skill 承载「何时触发、怎么讲给用户听」。方法论才是可迁移资产，
+  所以 Skill 是主体，库是它的手脚。
+- **为什么骨架先行**：无结构地让 LLM「解释一下」，会漂移成无关的教科书段落。
+  用固定五维 + 轨迹锚点约束它，才能保证反思扣住本次任务。
+- **为什么标置信度**：反思本身也会幻觉，区分 fact / inference，避免用错误知识
+  训练使用者。
+- **为什么采集而不是让用户手写轨迹**：没人会手写轨迹。把运行环境的真实记录接进来
+  （`capture`），并如实指出「哪一步值得追问」而不是编造理由，才是可用的起点。
+
 ## 目录结构
 
 ```
@@ -128,6 +146,7 @@ knowWhy/
 ├── examples/           # 示例轨迹
 │   ├── demo_session.jsonl / demo_conclusion.md   # 教学示例
 │   └── real/           # 真实 Mira 轨迹（原始 + 规范化）
+├── docs/assets/        # README 用的架构 / 数据流 / 五维 / 触发 示意图（SVG）
 ├── tests/              # pytest 自测（库 23 + capture 18 + Skill 脚本 5）
 ├── skill/knowwhy/      # 可安装 Agent Skill
 │   ├── SKILL.md
@@ -138,16 +157,6 @@ knowWhy/
 ├── pyproject.toml
 └── README.md
 ```
-
-## 设计取舍
-
-- **为什么 skill + 库，而不是二选一**：库承载"怎么算"（可测试、可复用、可被任何
-  runtime 调用），Skill 承载"何时触发、怎么讲给用户听"。方法论才是可迁移资产，
-  所以 Skill 是主体，库是它的手脚。
-- **为什么骨架先行**：无结构地让 LLM"解释一下"，会漂移成无关的教科书段落。
-  用固定五维 + 轨迹锚点约束它，才能保证反思扣住本次任务。
-- **为什么标置信度**：反思本身也会幻觉。区分 fact / inference，避免用错误知识
-  训练使用者。
 
 ## License
 
