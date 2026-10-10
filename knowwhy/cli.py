@@ -22,6 +22,7 @@ import sys
 from pathlib import Path
 
 from . import __version__
+from .capture import from_mira_trace
 from .engine import build_reflection
 from .models import DIMENSIONS
 from .recall import DEFAULT_STORE, append_entry, grow_review, load_entries, GrowthEntry
@@ -98,6 +99,30 @@ def cmd_check_manual(args: argparse.Namespace) -> int:
     return 0 if hit else 1
 
 
+def cmd_capture(args: argparse.Namespace) -> int:
+    """Convert a real agent trace record (e.g. a Mira trace JSON) to SessionTrace.
+
+    Reads the runtime's own trace file and emits our normalized JSON, so the
+    pipeline can run on actual work instead of hand-written traces:
+        knowwhy capture mira_trace.json -o session.jsonl
+    """
+    raw = Path(args.input).read_text(encoding="utf-8")
+    data = json.loads(raw)
+    trace = from_mira_trace(data, session_id=args.session_id or "")
+    payload = trace.to_dict()
+
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        print(f"wrote {args.out}  ({len(trace.steps)} steps, "
+              f"{len(trace.tool_calls())} tool calls, "
+              f"{len(trace.failures())} failures)")
+    else:
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="knowwhy",
@@ -138,6 +163,12 @@ def build_parser() -> argparse.ArgumentParser:
     m = sub.add_parser("check-manual", help="is this text a manual know-why request?")
     m.add_argument("text")
     m.set_defaults(func=cmd_check_manual)
+
+    c = sub.add_parser("capture", help="convert a real agent trace record to a normalized trace")
+    c.add_argument("input", help="path to the runtime's trace JSON (e.g. a Mira /api/v1/traces/<id> dump)")
+    c.add_argument("-o", "--out", default=None, help="write normalized trace JSON here")
+    c.add_argument("--session-id", default=None, help="override session id")
+    c.set_defaults(func=cmd_capture)
 
     return p
 

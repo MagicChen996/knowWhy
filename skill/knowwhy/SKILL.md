@@ -65,13 +65,24 @@ python scripts/summarize_trace.py trigger \
 
 反思必须有素材，否则就是编故事。按优先级取：
 
-1. **如果 agent 运行环境里有会话轨迹**（工具调用链、参数、中间结果），先把它整理成
-   JSONL（见 `references/trace_formats.md`），**在每个真正的「选择」处补上 `rationale`
-   和 `alternatives`**——这两项决定了整份复盘的质量。
-2. **如果没有现成轨迹，但有本次任务的结论文档**（如 `task_conclusion.md`），直接把它
-   喂进去，解析器会自动把「因为 / 而非 / 之所以 / 选择」这类行提升为 rationale。
+1. **如果运行环境暴露了本次会话的轨迹记录**（Mira 本地 API：`/api/v1/traces/by-session/<session>` 列出 trace id，`/api/v1/traces/<id>` 取单条），直接用内置的 `capture` 把它转成规范轨迹——这是最省事也最真实的路径：
+
+   ```bash
+   python scripts/summarize_trace.py capture <trace记录.json> -o session.json
+   ```
+
+   capture 会保留每个工具调用、参数、失败与重试，并**从可观察线索**推断出候选决策点
+   （失败后的转向、原样重试、首次引入新能力等）。注意：原始轨迹从不记录「为什么」，
+   所以它给的是线索而不是理由，理由仍要由你（agent）结合上下文补全。
+
+2. **如果只有本次任务的结论文档**（如 `task_conclusion.md`），直接把它喂进去，解析器
+   会自动把「因为 / 而非 / 之所以 / 选择」这类行提升为 rationale。
 3. **如果两者都没有**，先问用户一句话：本次任务的关键选择是哪几个、当时为什么那么选。
    不要凭记忆编造轨迹。
+
+**轨迹质量的一个关键点**：真实的 shell 轨迹里，命令因退出码非零而被标成 `success=false`
+很常见（grep 没匹配到、CLI 用退出码表达「否」）。capture 对 shell 工具做了区分——有输出
+且无错误信息的不算失败——否则「仍待弄清」会被无关噪音淹没。
 
 ### 第 2 步：压成紧凑摘要（这一步喂给反思）
 

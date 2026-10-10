@@ -19,6 +19,11 @@ from __future__ import annotations
 __version__ = "0.1.0"
 
 from .engine import DIMENSION_QUESTIONS, build_reflection
+from .capture import (
+    from_mira_trace,
+    mira_trace_list_url,
+    mira_trace_url,
+)
 from .models import (
     DIMENSION_LABELS_ZH,
     DIMENSIONS,
@@ -68,6 +73,10 @@ __all__ = [
     "load_trace",
     "parse_trace",
     "summarize_trace",
+    # capture (real agent traces -> SessionTrace)
+    "from_mira_trace",
+    "mira_trace_list_url",
+    "mira_trace_url",
     # engine
     "build_reflection",
     "DIMENSION_QUESTIONS",

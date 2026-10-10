@@ -33,6 +33,7 @@ for candidate in (_here.parents[3], _here.parents[2]):
 try:
     from knowwhy import (
         build_reflection,
+        from_mira_trace,
         load_trace,
         parse_trace,
         summarize_trace,
@@ -67,6 +68,11 @@ def main() -> int:
     s.add_argument("trace")
     s.set_defaults(cmd="summarize")
 
+    c = sub.add_parser("capture")
+    c.add_argument("input", help="a runtime trace record (e.g. Mira /api/v1/traces/<id> dump)")
+    c.add_argument("-o", "--out", default=None)
+    c.set_defaults(cmd="capture")
+
     r = sub.add_parser("reflect")
     r.add_argument("trace")
     r.add_argument("--focus", default=None)
@@ -93,6 +99,16 @@ def main() -> int:
 
     if args.cmd == "summarize":
         print(json.dumps(summarize_trace(_load(args.trace)), ensure_ascii=False, indent=2))
+    elif args.cmd == "capture":
+        trace = from_mira_trace(json.loads(Path(args.input).read_text(encoding="utf-8")))
+        payload = trace.to_dict()
+        if args.out:
+            Path(args.out).write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
+            print(f"wrote {args.out} ({len(trace.steps)} steps)")
+        else:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
     elif args.cmd == "reflect":
         trace = _load(args.trace)
         ref = build_reflection(trace, focus=args.focus)

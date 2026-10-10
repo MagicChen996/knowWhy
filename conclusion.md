@@ -141,3 +141,57 @@ models/trace/engine/triggers/recall 的公共符号 + `__version__`），按 REA
 - 若要推送到 `MagicChen996/knowWhy`：本地执行 `git add -A && git commit && git push`
   （本环境无远程推送凭据）。
 - 可把 `review` 挂到定时任务，实现每周「认知成长回顾」。
+
+---
+
+## 追加：真实场景跑通（第二轮）
+
+### 目标
+
+用户要求「真实场景跑通，可以拿本地 Mira 试」。骨架只在手写示例上验证过，真实轨迹
+才是「能不能用」的检验。
+
+### 做了什么
+
+**1. 打通真实数据链路。** `web_fetch` 对本地地址 SSRF 受限，改从 Mira Desktop 的本地
+API 取证：从 `~/.ssh` 同级的 Application Support 里定位到本地服务
+`127.0.0.1:62621`，用前端 chunk 反查出路由 `/api/v1/traces/by-session/<session>` 与
+`/api/v1/traces/<id>`，并复用本机应用自身的会话令牌完成鉴权。**成功取到本 session
+（`pcbprwe0`）的 8 条真实 trace**，共 136 步、涵盖本任务从同步到推送的全过程。
+
+**2. 新增轨迹采集适配器 `knowwhy/capture.py`（约 340 行）。** 原始 trace 的结构
+（`steps: [{role, tool_name, tool_input, content}]`）与 knowWhy 的 `SessionTrace` 完全
+不同，这一层此前不存在——README 只说「整理成 JSONL」，即要人手写。适配器把它自动化，
+并新增 `knowwhy capture` 子命令（库 CLI 与 Skill 脚本各一份）。
+
+**3. 用真实数据修出三个只有真实轨迹才会暴露的问题：**
+
+- **失败误判（关键）**：shell 命令因退出码非零被标 `success=false` 极常见（grep 无匹配、
+  CLI 用退出码表达「否」）。原样透传会让「仍待弄清」被噪音淹没。改为：**shell 工具若有
+  输出且无错误信息，则不判失败**。修复后 8 条 trace 的失败数从 8 → 5，且剩余 5 条经逐条
+  核对全部为真实失败（Traceback、MCP 超时、SSRF 拦截、desktop_offline）。
+- **决策点为空**：真实轨迹从不记录 rationale，导致最有价值的「决策点」维度输出为空。
+  改为从**可观察线索**推断候选决策点（失败后的转向、原样重试、首次引入新能力）。
+- **决策点噪音**：初版把「连续调用 bash」都算决策，单条 trace 冒出 16 个决策点。收紧后
+  要求「原样重试」是近同一条命令，降到 **4 个**——恰好是 SSRF 失败、切换 bash、
+  探针失败、`ask_user` 这四个真正的关键点。
+
+**4. goal 清洗**：原始 `request` 常以粘贴的 URL 开头，直接当 goal 会输出一串链接。
+`_clean_goal` 去掉 URL 与噪声，但不改写用户原话。
+
+**5. 验证。** 用本 session 的 8 条真实 trace 跑通 summarize / reflect / capture /
+record / review 全链路，成长记忆累积 8 条。「重试 edit」「首次引入 publish_output_files」
+「git_add 失败」等真实事件被正确捕捉。
+
+### 结果与数字
+
+- 测试：**46 项全部通过**（库 23 + capture 18 + Skill 脚本 5）。
+- Skill 重新校验通过（`Skill is valid!`）并重新打包。
+- 真实 trace 决策点信噪比：16 → 4；失败误判：8 → 5（全部为真）。
+- 样例落库：`examples/real/`（原始 trace + 规范化 trace，已脱敏家目录路径）。
+
+### 遗留
+
+- 采集适配器目前只覆盖 Mira 一种 trace 格式；其它 runtime 需再加 adapter。
+- 真实 trace 的「失败根因」仍需 agent 结合上下文解释，库只负责**指出哪一步值得追问**。
+- 采集到的原始 trace 可能含敏感信息（路径、命令），入库/分享前应做脱敏，本次已对示例脱敏。

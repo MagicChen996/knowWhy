@@ -37,12 +37,15 @@ knowWhy 在做完一个任务后插入一个**低摩擦的反思回合**，把�
 
 ```bash
 pip install .          # 提供 `knowwhy` 命令
-python -m pytest -q    # 28 项自测
+python -m pytest -q    # 46 项自测
 ```
 
 ## 快速上手（CLI）
 
 ```bash
+# 0. 把运行环境里的真实轨迹转成规范轨迹（无需手写 JSONL）
+knowwhy capture examples/real/mira_trace_raw.json -o session.json
+
 # 1. 把会话轨迹压成紧凑摘要，喂给反思
 knowwhy summarize examples/demo_session.jsonl
 
@@ -56,6 +59,26 @@ knowwhy trigger --state .knowwhy/state.json --task-ended --n-steps 6 --turn 12
 # 4. 周期性成长回顾
 knowwhy review --store .knowwhy/growth.jsonl
 ```
+
+## 轨迹从哪来
+
+框架对「已有轨迹」做反思，所以真实使用时的第一步是把运行环境的记录接进来。
+目前的采集适配器支持 **Mira / sciClaw 本地轨迹**：
+
+```bash
+# 列出某次会话的所有 trace
+curl -H "Authorization: Bearer <token>" \
+  http://127.0.0.1:62621/api/v1/traces/by-session/<session_id>
+# 取单条 trace，然后交给 capture
+curl -H "Authorization: Bearer <token>" \
+  http://127.0.0.1:62621/api/v1/traces/<trace_id> -o trace.json
+knowwhy capture trace.json -o session.json && knowwhy reflect session.json
+```
+
+`capture` 做三件关键的事：保留每个工具调用与参数；**区分真实失败**（shell 命令因退出码
+非零而被标 false，但只要有输出且无错误信息就不算失败）；从可观察线索（失败后的转向、
+原样重试、首次引入新能力）推断出**候选决策点**——注意它给的是线索而非理由，理由仍由
+agent 结合上下文补全。见 `examples/real/` 里的真实样例。
 
 ## 快速上手（库）
 
@@ -100,10 +123,12 @@ python -m scripts.package_skill skill/knowwhy   # 需要 skill-creator 的脚本
 
 ```
 knowWhy/
-├── knowwhy/            # Python 库（trace / engine / triggers / recall / cli）+ __init__.py
+├── knowwhy/            # Python 库（trace / capture / engine / triggers / recall / cli）
 ├── templates/          # 通用五维话术模板
-├── examples/           # 示例轨迹（JSONL + Markdown）
-├── tests/              # pytest 自测（库 23 项 + Skill 脚本 5 项）
+├── examples/           # 示例轨迹
+│   ├── demo_session.jsonl / demo_conclusion.md   # 教学示例
+│   └── real/           # 真实 Mira 轨迹（原始 + 规范化）
+├── tests/              # pytest 自测（库 23 + capture 18 + Skill 脚本 5）
 ├── skill/knowwhy/      # 可安装 Agent Skill
 │   ├── SKILL.md
 │   ├── README.md
