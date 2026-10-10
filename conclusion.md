@@ -245,3 +245,50 @@ JSON 解析，**静默丢掉全部决策点/失败**（统计显示 0/0、目标
 
 - 原理槽位仍是「由 agent 填」；库不内置领域知识（刻意）。
 - 报告目前是单会话；跨会话的成长曲线仍是文本形式（`review`）。
+
+---
+
+## 追加：原理栏填充机制（第四轮）
+
+### 问题
+
+用户指出：生成的 HTML 报告里「原理 / 知识点」栏全是空的。
+根因是设计缺口——库按约定只出骨架（不编造领域知识），但**「agent 填原理」这半截
+没有任何机制承载**，所以交付物永远是空槽。这不是文档没说清，是缺少工具。
+
+### 做了什么
+
+**1. 新增 `knowwhy/annotations.py`：原理填充机制。**
+- `StepAnnotation`（why / principle / alternatives / sources / confidence）
+  与 `Annotations`（按 step index 索引）；
+- `scaffold_annotations()` 生成**预置好每个工具步骤键**的空清单——把「解释 21 步」
+  从空白页变成核对清单；
+- JSON 读写，可 diff、可进 git、**不会被重新生成报告冲掉**（这是不直接改 HTML 的理由）。
+
+**2. report 渲染支持合并标注。** 有标注的步骤用绿色「已解释」框替换占位；
+无标注的仍显示「待补全」。顶部新增 `已解释 N/M 步` 覆盖度 chip。
+三种状态用颜色区分：`已解释` / `推断` / `待补全`。
+
+**3. CLI + Skill 脚本新增 `annotate` 子命令**；`report` 新增 `--annotations`。
+工作流：`annotate`（出清单）→ agent 填 → `report --annotations`（出报告）。
+
+**4. 真正填了这份报告。** 本次会话的轨迹正是「同步上游 knowWhy 并完成项目」这件事，
+我有一手上下文，于是为 **21 个工具步骤全部写了 why + principle**，并逐条标注来源
+（OWASP SSRF 防护、ReAct 论文、前端构建产物反查等）与置信度。产出：
+`examples/reports/mira_session.annotations.json`（9.6 KB）+ 填好的报告。
+
+**5. 把「必须填」写进 SKILL.md。** 明确要求 agent：报告交付前若仍有「待补全」即为漏填，
+必须补齐再交付——因为用户明确要求「执行完给出的 HTML 得是 agent 填过的」。
+
+### 结果
+
+- 测试：**76 项全部通过**（库 23 + capture 18 + report 15 + annotations 17 + Skill 5）。
+  新增的 annotations 测试里有一条**防回归硬约束**：
+  `test_shipped_report_is_filled_not_placeholder` —— 提交的示例报告若又出现空原理栏就失败。
+- 报告覆盖度：**已解释 21/21 步**。
+- Skill 重新校验通过并打包。
+
+### 教训
+
+「库不编造」的正确形态不是「留个空位」，而是「留个空位 **+ 一条把空位填掉的固定流程**」。
+只做前者，交付物必然带着窟窿。这次补上的正是后半截。

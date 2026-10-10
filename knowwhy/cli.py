@@ -22,6 +22,7 @@ import sys
 from pathlib import Path
 
 from . import __version__
+from .annotations import dump_annotations, load_annotations, scaffold_annotations
 from .capture import from_mira_trace, load_any_trace
 from .engine import build_reflection
 from .models import DIMENSIONS
@@ -114,18 +115,53 @@ def cmd_report(args: argparse.Namespace) -> int:
     This is the user-facing deliverable: a page that shows the task timeline and,
     for each step, what happened / why / the principle behind it — so the person
     who watched the AI work can actually *see* and learn the run.
+
+    When `--annotations` is given, the agent's explanations are merged in, so the
+    delivered page is filled in rather than a page of open questions.
     """
     trace = _read_trace(args.trace, args.format)
     reflection = build_reflection(trace) if not args.no_reflection else None
-    out = Path(args.out) if args.out else Path(f"{args.trace}.report.html")
-    path = write_report(trace, reflection, out)
 
-    print(f"wrote {path}  ({len(trace.steps)} steps)")
+    ann = None
+    if args.annotations:
+        ann = load_annotations(args.annotations)
+        if ann.session_id and trace.session_id and ann.session_id != trace.session_id:
+            print(
+                f"warning: annotation session_id {ann.session_id!r} "
+                f"!= trace session_id {trace.session_id!r}",
+                file=sys.stderr,
+            )
+
+    out = Path(args.out) if args.out else Path(f"{args.trace}.report.html")
+    path = write_report(trace, reflection, out, annotations=ann)
+
+    n_tools = len(trace.tool_calls())
+    if ann is not None:
+        covered = sum(1 for s in trace.tool_calls() if (ann.get(s.index) and not ann.get(s.index).is_empty()))
+        print(f"wrote {path}  ({len(trace.steps)} steps, 已解释 {covered}/{n_tools})")
+    else:
+        print(f"wrote {path}  ({len(trace.steps)} steps)")
 
     if not args.no_open:
         opened = _open_in_browser(path)
         print("已用默认浏览器打开" if opened else
               f"（未能自动打开，请手动访问：{path.resolve().as_uri()}）")
+    return 0
+
+
+def cmd_annotate(args: argparse.Namespace) -> int:
+    """Produce a blank annotation file pre-keyed to every tool step.
+
+    This is the file an agent fills in to explain each step. Pre-seeding the keys
+    turns "explain 21 steps" from a blank page into a checklist.
+    """
+    trace = _read_trace(args.trace, args.format)
+    ann = scaffold_annotations(trace, reflection=None)
+    out = args.out or f"{args.trace}.annotations.json"
+    dump_annotations(ann, out)
+    print(f"wrote {out}  ({len(ann)} tool steps to explain)")
+    print("填写每个步骤的 why / principle（可选 sources / confidence），"
+          "再跑：knowwhy report <trace> --annotations " + out)
     return 0
 
 
@@ -218,9 +254,17 @@ def build_parser() -> argparse.ArgumentParser:
     rep.add_argument("trace", help="trace file path, or - for stdin")
     rep.add_argument("--format", choices=["json", "jsonl", "markdown"], default=None)
     rep.add_argument("-o", "--out", default=None, help="output .html path (default: <trace>.report.html)")
+    rep.add_argument("--annotations", default=None,
+                     help="agent-filled explanations JSON (see `knowwhy annotate`)")
     rep.add_argument("--no-open", action="store_true", help="do not open the browser")
     rep.add_argument("--no-reflection", action="store_true", help="timeline only, skip the 5-dim scaffold")
     rep.set_defaults(func=cmd_report)
+
+    an = sub.add_parser("annotate", help="scaffold a blank explanations file for every step")
+    an.add_argument("trace", help="trace file path, or - for stdin")
+    an.add_argument("--format", choices=["json", "jsonl", "markdown"], default=None)
+    an.add_argument("-o", "--out", default=None, help="output .json path")
+    an.set_defaults(func=cmd_annotate)
 
     return p
 

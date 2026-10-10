@@ -18,6 +18,13 @@ from __future__ import annotations
 
 __version__ = "0.1.0"
 
+from .annotations import (
+    Annotations,
+    StepAnnotation,
+    dump_annotations,
+    load_annotations,
+    scaffold_annotations,
+)
 from .engine import DIMENSION_QUESTIONS, build_reflection
 from .capture import (
     from_mira_trace,
@@ -99,6 +106,12 @@ __all__ = [
     "append_entry",
     "load_entries",
     "grow_review",
+    # annotations (agent-filled explanations)
+    "Annotations",
+    "StepAnnotation",
+    "load_annotations",
+    "dump_annotations",
+    "scaffold_annotations",
     # report (HTML)
     "render_report_html",
     "write_report",

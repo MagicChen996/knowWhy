@@ -3,7 +3,7 @@
 > 让使用者在使用 AI 完成任务的同时，**周期性复盘「为什么每一步这样做」**，
 > 把认知外包变成能力增长。
 
-[![tests](https://img.shields.io/badge/tests-61%20passed-brightgreen)](#安装)
+[![tests](https://img.shields.io/badge/tests-76%20passed-brightgreen)](#安装)
 [![python](https://img.shields.io/badge/python-3.9%2B-blue)](#安装)
 [![license](https://img.shields.io/badge/license-MIT-lightgrey)](#license)
 [![agent skill](https://img.shields.io/badge/Agent%20Skill-installable-6366f1)](#作为-agent-skill-使用)
@@ -39,7 +39,7 @@ knowWhy 在做完一个任务后插入一个**低摩擦的反思回合**，把�
 
 ```bash
 pip install .          # 提供 `knowwhy` 命令
-python -m pytest -q    # 61 项自测
+python -m pytest -q    # 76 项自测
 ```
 
 ## 快速上手（CLI）
@@ -72,22 +72,38 @@ knowwhy review --store .knowwhy/growth.jsonl
 
 - **任务时间线**：AI 这次实际执行的每一步，按顺序排列，失败步骤有醒目标记；
 - **每一步为什么这么做**：agent 亲述的理由标「agent 记录」，从轨迹推断的线索标「推断」；
-- **每一步的原理 / 知识点**：留成带问题的待填槽位，由 agent 结合领域知识补全
-  （库不编造）；
+- **每一步的原理 / 知识点**：机制、适用前提、失效场景，并标注来源与置信度；
 - **参数 / 返回**：折叠展示，需要时展开看细节；
 - **五维复盘 + 你这次可以带走的 / 仍待弄清**。
 
+### 原理由谁填：agent 填，库不编造
+
+库只出**骨架**（结构 + 「哪一步值得追问」），机制/原理这类领域知识由 agent 填写并
+标注来源——反思本身会幻觉，宁可留白也不用编造的知识训练使用者。流程三步：
+
 ```bash
-knowwhy report session.json              # 生成 session.json.report.html 并打开
+# 1) 生成待填清单：每个工具步骤一个空槽
+knowwhy annotate session.json -o report.annotations.json
+
+# 2) agent 填写每个步骤的 why（为什么）与 principle（原理/知识点）
+#    （可选 sources 依据、confidence 置信度）
+
+# 3) 生成报告并打开：填好的解释会替换掉占位
+knowwhy report session.json -o report.html --annotations report.annotations.json
+```
+
+页面用颜色区分三种状态：`已解释`（agent 填的）、`推断`（从轨迹观察到的线索）、
+`待补全`（尚未填写）。**交付前若仍有「待补全」，说明漏填了。**
+
+```bash
+knowwhy report session.json              # 不带标注：生成 session.json.report.html 并打开
 knowwhy report session.json --no-open    # 只生成，不打开（服务器 / CI）
 knowwhy report session.json --no-reflection   # 只要时间线，跳过五维
 ```
 
-示例产出见 [`examples/reports/reflection_report.html`](examples/reports/reflection_report.html)。
-
-**为什么原理栏是空的？** 这是刻意的：反思本身会幻觉，库只负责把「哪一步值得追问」
-指出来，机制/原理这类领域知识交由 agent 填写并标注来源。宁可留白，也不用编造的知识
-训练使用者。
+示例产出见 [`examples/reports/reflection_report.html`](examples/reports/reflection_report.html)
+（21 个工具步骤全部填好），对应的解释文件见
+[`examples/reports/mira_session.annotations.json`](examples/reports/mira_session.annotations.json)。
 
 ## 轨迹从哪来
 
@@ -168,12 +184,12 @@ python -m scripts.package_skill skill/knowwhy   # 需要 skill-creator 的脚本
 
 ```
 knowWhy/
-├── knowwhy/            # Python 库（trace / capture / engine / report / triggers / recall / cli）
+├── knowwhy/            # Python 库（trace / capture / engine / report / annotations / triggers / recall / cli）
 ├── templates/          # 通用五维话术模板
 ├── examples/           # 示例轨迹与产出
 │   ├── demo_session.jsonl / demo_conclusion.md   # 教学示例
 │   ├── real/           # 真实 Mira 轨迹（原始 + 规范化）
-│   └── reports/        # 生成的 HTML 复盘报告示例
+│   └── reports/        # HTML 复盘报告示例 + agent 填写好的解释文件
 ├── docs/assets/        # README 用的架构 / 数据流 / 五维 / 触发 示意图（SVG）
 ├── tests/              # pytest 自测（库 23 + capture 18 + report 15 + Skill 脚本 5）
 ├── skill/knowwhy/      # 可安装 Agent Skill

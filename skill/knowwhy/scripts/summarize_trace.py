@@ -40,6 +40,7 @@ try:
         summarize_trace,
         write_report,
     )
+    from knowwhy.annotations import load_annotations, scaffold_annotations, dump_annotations
     from knowwhy.recall import (
         DEFAULT_STORE,
         GrowthEntry,
@@ -85,8 +86,14 @@ def main() -> int:
     rp = sub.add_parser("report")
     rp.add_argument("trace")
     rp.add_argument("-o", "--out", default=None)
+    rp.add_argument("--annotations", default=None)
     rp.add_argument("--no-open", action="store_true")
     rp.set_defaults(cmd="report")
+
+    an = sub.add_parser("annotate")
+    an.add_argument("trace")
+    an.add_argument("-o", "--out", default=None)
+    an.set_defaults(cmd="annotate")
 
     r = sub.add_parser("reflect")
     r.add_argument("trace")
@@ -133,11 +140,18 @@ def main() -> int:
             )
             append_entry(entry, store=args.store)
         print(ref.to_json() if args.json else ref.to_markdown())
+    elif args.cmd == "annotate":
+        trace = _load_any(args.trace)
+        ann = scaffold_annotations(trace)
+        out = args.out or (args.trace + ".annotations.json")
+        dump_annotations(ann, out)
+        print(f"wrote {out} ({len(ann)} tool steps to explain)")
     elif args.cmd == "report":
         import webbrowser
         trace = _load_any(args.trace)
         out = args.out or (args.trace + ".report.html")
-        path = write_report(trace, build_reflection(trace), out)
+        ann = load_annotations(args.annotations) if args.annotations else None
+        path = write_report(trace, build_reflection(trace), out, annotations=ann)
         print(f"wrote {path}  ({len(trace.steps)} steps)")
         if not args.no_open:
             try:

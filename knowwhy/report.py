@@ -31,6 +31,7 @@ import json
 from pathlib import Path
 from typing import Any, Optional
 
+from . import annotations as _ann
 from .models import DIMENSION_LABELS_ZH, Reflection, SessionTrace, TraceStep
 
 # --------------------------------------------------------------------------- #
@@ -70,22 +71,34 @@ def _truncate(text: str, limit: int) -> tuple[str, bool]:
 # --------------------------------------------------------------------------- #
 
 
-def _step_card(step: TraceStep, reflection: Optional[Reflection]) -> dict[str, Any]:
+def _step_card(
+    step: TraceStep,
+    reflection: Optional[Reflection],
+    annotation: Optional[_ann.StepAnnotation] = None,
+) -> dict[str, Any]:
     """Build the display model for one timeline entry.
 
     `why` and `principle` are the two fields a person most wants. The trace
     almost never carries them, so we surface:
       * `why` — the agent's own rationale if recorded, else the observable
-        evidence the capture layer inferred ("failed, then switched tools").
-      * `principle` — left as a scaffold prompt tied to this step, because the
-        library cannot know the domain mechanism.
+        evidence the capture layer inferred ("failed, then switched tools");
+        an annotation's `why` overrides both, since it is a real explanation.
+      * `principle` — filled from the annotation when present; otherwise left as
+        a scaffold prompt tied to this step, because the library cannot know the
+        domain mechanism.
     """
     out_preview, out_truncated = _truncate(step.outputs_summary or "", 600)
 
+    why = ""
+    why_is_inferred = False
+    alternatives: list[str] = []
+    principle_answer = ""
+    sources: list[str] = []
+    ann_confidence = ""
+
     if step.kind == "tool_call":
         why = step.rationale or ""
-        alternatives = step.alternatives or []
-        # The principle slot is deliberately a *question*, not an answer.
+        alternatives = list(step.alternatives or [])
         if step.name:
             principle_prompt = (
                 f"「{step.name}」这一步背后的机制 / 原理是什么？"
@@ -94,9 +107,21 @@ def _step_card(step: TraceStep, reflection: Optional[Reflection]) -> dict[str, A
         else:
             principle_prompt = "这一步背后的机制 / 原理是什么？"
     else:
-        why = ""
-        alternatives = []
         principle_prompt = ""
+
+    # Annotations win: they are the agent's actual explanation.
+    if annotation is not None and not annotation.is_empty():
+        if annotation.why:
+            why = annotation.why
+            why_is_inferred = False
+        if annotation.alternatives:
+            alternatives = list(annotation.alternatives)
+        if annotation.principle:
+            principle_answer = annotation.principle
+        sources = list(annotation.sources or [])
+        ann_confidence = annotation.confidence or ""
+    elif why:
+        why_is_inferred = why.startswith("[观察到的线索]")
 
     status = "unknown"
     if step.success is True:
@@ -111,9 +136,13 @@ def _step_card(step: TraceStep, reflection: Optional[Reflection]) -> dict[str, A
         "name": step.name or "",
         "summary": step.summary or "",
         "why": why,
-        "why_is_inferred": why.startswith("[观察到的线索]"),
+        "why_is_inferred": why_is_inferred,
+        "why_annotated": bool(annotation and annotation.why),
         "alternatives": alternatives,
         "principle_prompt": principle_prompt,
+        "principle_answer": principle_answer,
+        "sources": sources,
+        "confidence": ann_confidence,
         "inputs": step.inputs or {},
         "outputs": out_preview,
         "outputs_truncated": out_truncated,
@@ -239,6 +268,14 @@ details[open]>summary .chev{transform:rotate(90deg)}
 .pill.fact{background:var(--ok-soft);color:var(--ok)}
 .pill.infer{background:var(--warn-soft);color:var(--warn)}
 .pill.todo{background:var(--accent-soft);color:var(--accent)}
+.pill.done{background:var(--ok-soft);color:var(--ok)}
+.explained{
+  border-left:3px solid var(--ok);background:var(--ok-soft);
+  border-radius:0 9px 9px 0;padding:11px 14px;font-size:13.5px;color:var(--ink);
+  white-space:pre-wrap;
+}
+.sources{margin:8px 0 0;padding-left:17px;font-size:12px;color:var(--muted)}
+.conf{margin-top:7px;font-size:11.5px;color:var(--muted)}
 .why-inferred{color:var(--ink)}
 .answers{margin:6px 0 0;padding-left:18px;font-size:14px}
 .answers li{margin:2px 0}
@@ -310,7 +347,13 @@ def _render_step(card: dict[str, Any]) -> str:
     body: list[str] = []
 
     if card["why"]:
-        if card["why_is_inferred"]:
+        if card.get("why_annotated"):
+            body.append(
+                '<div class="field"><div class="lab">为什么这么做 '
+                '<span class="pill done">已解释</span></div>'
+                f'<p>{_e(card["why"])}</p></div>'
+            )
+        elif card["why_is_inferred"]:
             body.append(
                 '<div class="field"><div class="lab">为什么这么做 '
                 '<span class="pill infer">推断</span></div>'
@@ -330,7 +373,22 @@ def _render_step(card: dict[str, Any]) -> str:
             f'<ul class="answers">{items}</ul></div>'
         )
 
-    if card["principle_prompt"]:
+    if card.get("principle_answer"):
+        extra = ""
+        if card.get("sources"):
+            srcs = "".join(f"<li>{_e(s)}</li>" for s in card["sources"])
+            extra += f'<ul class="sources">{srcs}</ul>'
+        conf = ""
+        if card.get("confidence"):
+            label = _CONFIDENCE_LABEL.get(card["confidence"], card["confidence"])
+            conf = f'<div class="conf">置信度：{_e(label)}</div>'
+        body.append(
+            '<div class="field"><div class="lab">原理 / 知识点 '
+            '<span class="pill done">已解释</span></div>'
+            f'<div class="explained">{_e(card["principle_answer"])}</div>'
+            f"{extra}{conf}</div>"
+        )
+    elif card["principle_prompt"]:
         body.append(
             '<div class="field"><div class="lab">原理 / 知识点 '
             '<span class="pill todo">待补全</span></div>'
@@ -389,13 +447,27 @@ def render_report_html(
     reflection: Optional[Reflection] = None,
     *,
     title: str = "Know-Why 复盘",
+    annotations: Optional[_ann.Annotations] = None,
 ) -> str:
-    """Render a full, standalone HTML report for one session."""
-    cards = [_step_card(s, reflection) for s in trace.steps]
+    """Render a full, standalone HTML report for one session.
+
+    `annotations` supplies the agent's per-step explanations; wherever one is
+    present it replaces the scaffold placeholder, so the delivered page is
+    *filled in* rather than a page of open questions.
+    """
+    cards = [
+        _step_card(
+            s,
+            reflection,
+            annotation=(annotations.get(s.index) if annotations else None),
+        )
+        for s in trace.steps
+    ]
 
     n_tools = len(trace.tool_calls())
     n_fail = len(trace.failures())
     n_dec = len(trace.decision_points())
+    n_ann = sum(1 for c in cards if c.get("principle_answer") or c.get("why_annotated"))
 
     chips = [
         f'<span class="chip">共 <b>{len(trace.steps)}</b> 步</span>',
@@ -403,6 +475,10 @@ def render_report_html(
         f'<span class="chip">决策点 <b>{n_dec}</b></span>',
         f'<span class="chip">失败 <b>{n_fail}</b></span>',
     ]
+    if annotations is not None and len(annotations):
+        chips.append(
+            f'<span class="chip">已解释 <b>{n_ann}</b>/<b>{n_tools}</b> 步</span>'
+        )
     m = trace.metadata or {}
     if m.get("model"):
         chips.append(f'<span class="chip">模型 <b>{_e(m["model"])}</b></span>')
@@ -481,9 +557,10 @@ def render_report_html(
   {panels_html}
 
   <footer>
-    由 knowWhy 生成 · 时间线与「为什么」来自真实执行轨迹；标
-    <span class="pill infer">推断</span> 的是从轨迹观察到的线索而非 agent 亲述；
-    标 <span class="pill todo">待补全</span> 的原理栏由 agent 结合领域知识填写。
+    由 knowWhy 生成 · 时间线与「为什么」来自真实执行轨迹；
+    <span class="pill done">已解释</span> 的原理栏由 agent 结合领域知识补充，
+    <span class="pill infer">推断</span> 的是从轨迹观察到的线索而非 agent 亲述，
+    <span class="pill todo">待补全</span> 表示尚未填写。
     {f'<br>最终结果：{_e(outcome[:300])}' if outcome else ''}
   </footer>
 </div>
@@ -498,10 +575,14 @@ def write_report(
     out_path: str | Path,
     *,
     title: str = "Know-Why 复盘",
+    annotations: Optional[_ann.Annotations] = None,
 ) -> Path:
     """Render and write the HTML report; returns the resolved path."""
     p = Path(out_path)
     if p.parent and str(p.parent) not in ("", "."):
         p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(render_report_html(trace, reflection, title=title), encoding="utf-8")
+    p.write_text(
+        render_report_html(trace, reflection, title=title, annotations=annotations),
+        encoding="utf-8",
+    )
     return p
