@@ -1,0 +1,7 @@
+{"kind": "session_meta", "session_id": "demo-001", "task_name": "预测某分子溶解度", "goal": "估计候选分子 A 在水中的溶解度，判断是否值得做实验", "final_outcome": "给出溶解度区间与建议"}
+{"kind": "user_message", "summary": "帮我判断分子 A 在水里溶不溶，值不值得做实验"}
+{"kind": "tool_call", "name": "web_search", "summary": "查分子 A 的已知溶解度数据", "rationale": "先看有没有实测数据，有就不用算了", "alternatives": ["直接上 COSMO-RS 计算", "查内部数据库"], "success": true}
+{"kind": "tool_call", "name": "chem-properties", "summary": "用 COSMO-RS 估算 logS", "rationale": "文献没有实测值，只能估算；选 COSMO-RS 而非 QSPR 因为它是机理模型、外推更稳", "alternatives": ["QSPR 定量构效模型"], "success": true}
+{"kind": "tool_call", "name": "reactify", "summary": "做构象搜索后再算", "rationale": "第一次算结果异常，怀疑构象没采全，先 CREST 采样", "success": false}
+{"kind": "tool_call", "name": "reactify", "summary": "构象采样后重算 logS", "rationale": "补齐构象后重跑，验证是构象问题", "success": true}
+{"kind": "assistant_message", "summary": "综合估算值给出区间与实验建议"}
