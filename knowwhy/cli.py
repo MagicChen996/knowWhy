@@ -22,17 +22,26 @@ import sys
 from pathlib import Path
 
 from . import __version__
-from .capture import from_mira_trace
+from .capture import from_mira_trace, load_any_trace
 from .engine import build_reflection
 from .models import DIMENSIONS
 from .recall import DEFAULT_STORE, append_entry, grow_review, load_entries, GrowthEntry
+from .report import write_report
 from .trace import load_trace, parse_trace, summarize_trace
 from .triggers import TriggerConfig, TriggerState, advance, evaluate, is_manual_request
 
 
 def _read_trace(path: str, fmt: str | None):
+    """Load a trace from a file or stdin.
+
+    When no explicit format is given we auto-detect, including raw runtime
+    dumps (e.g. a Mira trace record). This matters for `report`: a raw Mira file
+    parsed as generic JSON silently produces an empty-looking report.
+    """
     if path == "-":
         return parse_trace(sys.stdin.read(), fmt=fmt)
+    if fmt is None:
+        return load_any_trace(path)
     return load_trace(path, fmt=fmt)
 
 
@@ -97,6 +106,41 @@ def cmd_check_manual(args: argparse.Namespace) -> int:
     hit = is_manual_request(args.text)
     print("manual" if hit else "not_manual")
     return 0 if hit else 1
+
+
+def cmd_report(args: argparse.Namespace) -> int:
+    """Render the session as a self-contained HTML report and (optionally) open it.
+
+    This is the user-facing deliverable: a page that shows the task timeline and,
+    for each step, what happened / why / the principle behind it — so the person
+    who watched the AI work can actually *see* and learn the run.
+    """
+    trace = _read_trace(args.trace, args.format)
+    reflection = build_reflection(trace) if not args.no_reflection else None
+    out = Path(args.out) if args.out else Path(f"{args.trace}.report.html")
+    path = write_report(trace, reflection, out)
+
+    print(f"wrote {path}  ({len(trace.steps)} steps)")
+
+    if not args.no_open:
+        opened = _open_in_browser(path)
+        print("已用默认浏览器打开" if opened else
+              f"（未能自动打开，请手动访问：{path.resolve().as_uri()}）")
+    return 0
+
+
+def _open_in_browser(path: Path) -> bool:
+    """Best-effort: open the report in the default browser.
+
+    Guarded because this must never fail the command — headless / CI
+    environments have no browser, and that is a normal, non-fatal situation.
+    """
+    import webbrowser
+
+    try:
+        return bool(webbrowser.open(path.resolve().as_uri()))
+    except Exception:
+        return False
 
 
 def cmd_capture(args: argparse.Namespace) -> int:
@@ -169,6 +213,14 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("-o", "--out", default=None, help="write normalized trace JSON here")
     c.add_argument("--session-id", default=None, help="override session id")
     c.set_defaults(func=cmd_capture)
+
+    rep = sub.add_parser("report", help="render a self-contained HTML report and open it")
+    rep.add_argument("trace", help="trace file path, or - for stdin")
+    rep.add_argument("--format", choices=["json", "jsonl", "markdown"], default=None)
+    rep.add_argument("-o", "--out", default=None, help="output .html path (default: <trace>.report.html)")
+    rep.add_argument("--no-open", action="store_true", help="do not open the browser")
+    rep.add_argument("--no-reflection", action="store_true", help="timeline only, skip the 5-dim scaffold")
+    rep.set_defaults(func=cmd_report)
 
     return p
 

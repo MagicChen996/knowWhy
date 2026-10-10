@@ -1,4 +1,4 @@
-<svg width="880" height="230" viewBox="0 0 880 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="knowWhy 数据流：轨迹 → 反思 → 成长记忆">
+<svg width="1060" height="230" viewBox="0 0 1060 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="knowWhy 数据流：轨迹 → 反思 → 成长记忆">
   <defs>
     <style>
       .t { font-family: -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
@@ -15,7 +15,7 @@
     </marker>
   </defs>
 
-  <rect width="880" height="230" rx="14" fill="#ffffff"/>
+  <rect width="1060" height="230" rx="14" fill="#ffffff"/>
 
   <!-- stage boxes -->
   <!-- 0 -->
@@ -58,19 +58,28 @@
   <text x="722" y="129" class="t sub" fill="#64748b">learned / stuck</text>
   <text x="722" y="145" class="t sub" fill="#64748b">写进成长记忆</text>
 
+  <!-- 5 report -->
+  <rect x="880" y="60" width="158" height="96" rx="11" fill="#fdf4ff" stroke="#f0abfc" stroke-width="1.4" filter="url(#soft2)"/>
+  <circle cx="898" cy="78" r="9" fill="#c026d3"/>
+  <text x="898" y="82" class="t num" fill="#fff" text-anchor="middle">5</text>
+  <text x="890" y="110" class="t art" fill="#86198f">report.html</text>
+  <text x="890" y="129" class="t sub" fill="#64748b">时间线 + 每步为什么/原理</text>
+  <text x="890" y="145" class="t sub" fill="#64748b">浏览器打开，直接看</text>
+
   <!-- arrows -->
   <line x1="166" y1="108" x2="186" y2="108" stroke="#94a3b8" stroke-width="1.8" marker-end="url(#ar2)"/>
   <line x1="340" y1="108" x2="360" y2="108" stroke="#94a3b8" stroke-width="1.8" marker-end="url(#ar2)"/>
   <line x1="514" y1="108" x2="534" y2="108" stroke="#94a3b8" stroke-width="1.8" marker-end="url(#ar2)"/>
   <line x1="688" y1="108" x2="708" y2="108" stroke="#94a3b8" stroke-width="1.8" marker-end="url(#ar2)"/>
 
+  <line x1="864" y1="108" x2="876" y2="108" stroke="#94a3b8" stroke-width="1.8" marker-end="url(#ar2)"/>
   <!-- feedback loop -->
-  <path d="M788,160 C788,196 430,200 430,196 C430,200 62,200 62,160"
+  <path d="M960,160 C960,198 430,202 430,198 C430,202 62,202 62,160"
         fill="none" stroke="#f97316" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#ar2)"/>
-  <rect x="352" y="188" width="156" height="24" rx="12" fill="#fff7ed" stroke="#fdba74"/>
+  <rect x="389" y="188" width="162" height="24" rx="12" fill="#fff7ed" stroke="#fdba74"/>
   <text x="430" y="204" class="t sub" fill="#c2410c" text-anchor="middle">周期性回顾：下一次遇到它的近亲</text>
 
   <!-- caption -->
-  <text x="16" y="34" class="t art" fill="#334155">knowwhy capture → summarize → reflect → record</text>
+  <text x="16" y="34" class="t art" fill="#334155">knowwhy capture → summarize → reflect → record → report</text>
   <text x="16" y="52" class="t sub" fill="#94a3b8">一条真实轨迹如何变成可迁移的认知</text>
 </svg>

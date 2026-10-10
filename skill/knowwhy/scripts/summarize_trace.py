@@ -34,9 +34,11 @@ try:
     from knowwhy import (
         build_reflection,
         from_mira_trace,
+        load_any_trace,
         load_trace,
         parse_trace,
         summarize_trace,
+        write_report,
     )
     from knowwhy.recall import (
         DEFAULT_STORE,
@@ -60,6 +62,13 @@ def _load(path: str):
     return load_trace(path)
 
 
+def _load_any(path: str):
+    """Load a trace, auto-detecting raw runtime dumps (e.g. Mira records)."""
+    if path == "-":
+        return parse_trace(sys.stdin.read())
+    return load_any_trace(path)
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description="knowWhy Skill helper")
     sub = p.add_subparsers(dest="command", required=True)
@@ -72,6 +81,12 @@ def main() -> int:
     c.add_argument("input", help="a runtime trace record (e.g. Mira /api/v1/traces/<id> dump)")
     c.add_argument("-o", "--out", default=None)
     c.set_defaults(cmd="capture")
+
+    rp = sub.add_parser("report")
+    rp.add_argument("trace")
+    rp.add_argument("-o", "--out", default=None)
+    rp.add_argument("--no-open", action="store_true")
+    rp.set_defaults(cmd="report")
 
     r = sub.add_parser("reflect")
     r.add_argument("trace")
@@ -118,6 +133,18 @@ def main() -> int:
             )
             append_entry(entry, store=args.store)
         print(ref.to_json() if args.json else ref.to_markdown())
+    elif args.cmd == "report":
+        import webbrowser
+        trace = _load_any(args.trace)
+        out = args.out or (args.trace + ".report.html")
+        path = write_report(trace, build_reflection(trace), out)
+        print(f"wrote {path}  ({len(trace.steps)} steps)")
+        if not args.no_open:
+            try:
+                webbrowser.open(Path(path).resolve().as_uri())
+                print("已用默认浏览器打开")
+            except Exception:
+                pass
     elif args.cmd == "review":
         print(grow_review(store=args.store))
     elif args.cmd == "trigger":

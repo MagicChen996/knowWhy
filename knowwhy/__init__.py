@@ -21,6 +21,8 @@ __version__ = "0.1.0"
 from .engine import DIMENSION_QUESTIONS, build_reflection
 from .capture import (
     from_mira_trace,
+    load_any_trace,
+    looks_like_mira_trace,
     mira_trace_list_url,
     mira_trace_url,
 )
@@ -39,6 +41,7 @@ from .recall import (
     grow_review,
     load_entries,
 )
+from .report import render_report_html, write_report
 from .trace import (
     from_json,
     from_jsonl,
@@ -75,6 +78,8 @@ __all__ = [
     "summarize_trace",
     # capture (real agent traces -> SessionTrace)
     "from_mira_trace",
+    "load_any_trace",
+    "looks_like_mira_trace",
     "mira_trace_list_url",
     "mira_trace_url",
     # engine
@@ -94,4 +99,7 @@ __all__ = [
     "append_entry",
     "load_entries",
     "grow_review",
+    # report (HTML)
+    "render_report_html",
+    "write_report",
 ]

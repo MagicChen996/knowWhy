@@ -32,6 +32,7 @@ Key design decisions, each of which matters for reflection quality:
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Any, Optional
 
 from .models import SessionTrace, TraceStep
@@ -351,3 +352,54 @@ def mira_trace_list_url(base_url: str, session_id: str) -> str:
 
 def mira_trace_url(base_url: str, trace_id: str) -> str:
     return f"{base_url.rstrip('/')}/api/v1/traces/{trace_id}"
+
+
+def looks_like_mira_trace(data: Any) -> bool:
+    """Heuristic: is this dict a raw Mira/sciClaw trace record?
+
+    The signal is a `steps` list whose entries use the runtime's own vocabulary
+    (`role` in {assistant, tool} plus `tool_name`/`tool_input`). A generic
+    SessionTrace JSON uses `kind` instead, so the two do not collide.
+    """
+    if not isinstance(data, dict):
+        return False
+    steps = data.get("steps")
+    if not isinstance(steps, list) or not steps:
+        return False
+    for s in steps[:5]:
+        if not isinstance(s, dict):
+            return False
+        if s.get("role") in ("assistant", "tool") and (
+            "tool_name" in s or "tool_input" in s
+        ):
+            return True
+    return False
+
+
+def load_any_trace(path: str | Path) -> SessionTrace:
+    """Load a trace from *any* supported source, auto-detecting the format.
+
+    This exists so callers (notably `knowwhy report`) do not have to know or care
+    whether the user is pointing at a normalized trace, a JSONL log, a Markdown
+    conclusion, or a raw runtime dump. Getting this wrong is silent and costly:
+    a raw Mira file parsed as generic JSON yields zero decisions and zero
+    failures, so the report looks empty for no visible reason.
+    """
+    import json
+
+    from .trace import load_trace, parse_trace
+
+    p = Path(path)
+    text = p.read_text(encoding="utf-8")
+
+    # Raw runtime dump? Detect before generic parsing swallows it.
+    stripped = text.lstrip()
+    if stripped.startswith("{"):
+        try:
+            obj = json.loads(text)
+        except json.JSONDecodeError:
+            obj = None
+        if looks_like_mira_trace(obj):
+            return from_mira_trace(obj)
+
+    return parse_trace(text)
